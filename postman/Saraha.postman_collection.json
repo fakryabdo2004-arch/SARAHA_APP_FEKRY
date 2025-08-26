@@ -1,0 +1,188 @@
+{
+  "info": {
+    "name": "Saraha API",
+    "_postman_id": "b0bd8a67-9f0f-4b8a-8d0a-000000000002",
+    "description": "Postman collection for Saraha API (Express + MongoDB). Includes tests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000"
+    },
+    {
+      "key": "manageToken",
+      "value": ""
+    },
+    {
+      "key": "username",
+      "value": "demo"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200', ()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/users",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"username\": \"demo\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+              "var json = pm.response.json();",
+              "pm.collectionVariables.set('manageToken', json.data.manageToken);",
+              "pm.collectionVariables.set('username', json.data.username || 'demo');"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Public Profile",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/users/{{username}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200', ()=>pm.expect([200,404]).to.include(pm.response.code));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Post Message (JSON)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/messages/{{username}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"text\": \"Hello from Postman tests\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('201', ()=>pm.response.to.have.status(201));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Post Message (with Image)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/messages/{{username}}",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "text",
+              "value": "Hello with image",
+              "type": "text"
+            },
+            {
+              "key": "image",
+              "type": "file",
+              "src": ""
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('201', ()=>pm.response.to.have.status(201));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "List Messages",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/messages/{{username}}?limit=10&page=1"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200', ()=>pm.response.to.have.status(200));",
+              "pm.expect(pm.response.json().data.items).to.be.an('array');"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete Message (requires x-manage-token)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "x-manage-token",
+            "value": "{{manageToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/messages/{{username}}/:messageId"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200/404', ()=>pm.expect([200,404]).to.include(pm.response.code));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
